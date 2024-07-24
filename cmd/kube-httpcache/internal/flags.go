@@ -55,6 +55,9 @@ type KubeHTTPProxyFlags struct {
 		VCLTemplate          string
 		VCLTemplatePoll      bool
 		WorkingDir           string
+		MaxRetries           int
+		RetryBackoffString   string
+		RetryBackoff         time.Duration
 	}
 	Readiness struct {
 		Enable  bool
@@ -107,6 +110,8 @@ func (f *KubeHTTPProxyFlags) Parse() error {
 	flag.StringVar(&f.Varnish.AdditionalParameters, "varnish-additional-parameters", "", "Additional Varnish start parameters (-p, seperated by comma), like 'ban_dups=on,cli_timeout=30'")
 	flag.BoolVar(&f.Varnish.VCLTemplatePoll, "varnish-vcl-template-poll", false, "poll for file changes instead of using inotify (useful on some network filesystems)")
 	flag.StringVar(&f.Varnish.WorkingDir, "varnish-working-dir", "", "varnish working directory (-n)")
+	flag.IntVar(&f.Varnish.MaxRetries, "varnish-retries", 3, "maximum number of attempts for vcl apply")
+	flag.StringVar(&f.Varnish.RetryBackoffString, "varnish-backoff", "10s", "minimum time to wait between each attempt")
 
 	// present for BC only; no effect until #36 [1] has resolved
 	//   [1]: https://github.com/mittwald/kube-httpcache/issues/36
@@ -135,6 +140,11 @@ func (f *KubeHTTPProxyFlags) Parse() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	f.Varnish.RetryBackoff, err = time.ParseDuration(f.Varnish.RetryBackoffString)
+	if err != nil {
+		return err
 	}
 
 	return nil

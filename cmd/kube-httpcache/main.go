@@ -133,6 +133,8 @@ func main() {
 		templateUpdates,
 		varnishSignaller,
 		opts.Varnish.VCLTemplate,
+		opts.Varnish.MaxRetries,
+		opts.Varnish.RetryBackoff,
 	)
 	if err != nil {
 		panic(err)

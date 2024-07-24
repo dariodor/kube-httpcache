@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/mittwald/kube-httpcache/pkg/signaller"
 	"github.com/mittwald/kube-httpcache/pkg/watcher"
@@ -42,6 +43,9 @@ type VarnishController struct {
 	configFile         string
 	localAdminAddr     string
 	currentVCLName     string
+	MaxRetries         int
+	RetryBackoff       time.Duration
+	Attempt            int
 }
 
 func NewVarnishController(
@@ -59,6 +63,8 @@ func NewVarnishController(
 	templateUpdates chan []byte,
 	varnishSignaller *signaller.Signaller,
 	vclTemplateFile string,
+	MaxRetries int,
+	RetryBackoff time.Duration,
 ) (*VarnishController, error) {
 	contents, err := os.ReadFile(vclTemplateFile)
 	if err != nil {
@@ -80,6 +86,9 @@ func NewVarnishController(
 		backendUpdates:       backendUpdates,
 		varnishSignaller:     varnishSignaller,
 		configFile:           "/tmp/vcl",
+		MaxRetries:           MaxRetries,
+		RetryBackoff:         RetryBackoff,
+		Attempt:              1,
 	}
 	err = v.setTemplate(contents)
 	if err != nil {
