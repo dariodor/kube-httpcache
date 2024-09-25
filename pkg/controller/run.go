@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/mittwald/kube-httpcache/pkg/watcher"
@@ -52,7 +51,6 @@ func (v *VarnishController) Run(ctx context.Context) error {
 		for err := range watchErrors {
 			if err != nil {
 				glog.Warningf("error while watching for updates: %s", err.Error())
-				retry(v, ctx)
 			}
 		}
 	}()
@@ -104,16 +102,4 @@ func (v *VarnishController) generateArgs() []string {
 	}
 
 	return args
-}
-
-func retry(v *VarnishController, ctx context.Context) {
-	for v.Attempt = 1; v.Attempt <= v.MaxRetries; v.Attempt++ {
-		retryTime := v.RetryBackoff * time.Duration(v.Attempt)
-		glog.Infof("retrying in %s, attempt %d/%d", retryTime, v.Attempt, v.MaxRetries)
-		time.Sleep(retryTime)
-		err := v.rebuildConfig(ctx)
-		if err != nil {
-			glog.Infof("error received: %s", err)
-		}
-	}
 }
